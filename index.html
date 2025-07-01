@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>장학금 모으기 게임</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; background: #f0f8ff;
+  }
+  body {
+    width: 100vw; height: 100vh; min-height: 100vh;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
+  }
+  #gameWrapper {
+    width: 100vw; max-width: 450px;
+    height: 100vh; max-height: 800px;
+    position: relative;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    touch-action: none;
+    display: flex; justify-content: center; align-items: center;
+    background: linear-gradient(to bottom, #cbe8ff 0%, #a0d8f0 100%);
+    overflow: hidden;
+  }
+  #bg-objects {
+    position: absolute;
+    width: 100%; height: 100%;
+    left: 0; top: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .cloud {
+    position: absolute;
+    width: 100px; height: 60px;
+    opacity: 0.7;
+    animation: cloudmove 12s linear infinite;
+  }
+  .cloud.c2 { width: 140px; height: 80px; top: 12vw; left: 60vw; opacity: 0.5; animation-duration: 18s; }
+  .cloud.c3 { width: 80px; height: 48px; top: 28vw; left: 10vw; opacity: 0.6; animation-duration: 14s; }
+  .cloud.c4 { width: 120px; height: 70px; top: 45vw; left: 40vw; opacity: 0.5; animation-duration: 20s; }
+  @keyframes cloudmove {
+    0% { left: -160px; }
+    100% { left: 100vw; }
+  }
+  #startScreen {
+    position: absolute; width: 100%; height: 100%;
+    background: transparent;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 1000;
+    pointer-events: auto;
+  }
+  #startBtn {
+    font-size: 32px; padding: 24px 60px;
+    background: #fff; border: 3px solid #2a7dc8; border-radius: 18px;
+    color: #2a7dc8; font-weight: bold; cursor: pointer;
+    box-shadow: 0 2px 12px #0002;
+    transition: background 0.1s, color 0.1s;
+    pointer-events: auto;
+    z-index: 1001;
+  }
+  #startBtn:hover {
+    background: #2a7dc8; color: #fff;
+  }
+  #gameArea {
+    position: absolute; width: 100%; height: 100%; left: 0; top: 0;
+    overflow: hidden; display: none;
+    z-index: 1;
+  }
+  #basket {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    width: 80px;
+    height: 180px;
+    background: transparent url('character.png') center/contain no-repeat;
+    transform: translateX(-50%) scaleX(1);
+    transition: left 0.08s, transform 0.08s;
+    z-index: 2;
+  }
+  .fallingItem {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: transparent url('coin.png') center/contain no-repeat;
+    z-index: 3;
+  }
+  #score {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    position: absolute;
+    top: 18px;
+    left: 24px;
+    z-index: 2;
+    text-shadow: 1px 1px 6px #fff8;
+  }
+  #timer {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    position: absolute;
+    top: 18px;
+    right: 24px;
+    z-index: 2;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    text-shadow: 1px 1px 6px #fff8;
+  }
+  .moveBtn {
+    position: absolute;
+    bottom: 60px;
+    width: 50px; height: 50px;
+    background: #fff9; border: 3px solid #bbb; border-radius: 50%;
+    font-size: 32px; color: #444;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; z-index: 4;
+    box-shadow: 0 2px 12px #0002;
+    cursor: pointer;
+    transition: background 0.1s;
+    touch-action: manipulation;
+  }
+  .moveBtn:active {
+    background: #e0e0e0;
+  }
+  #leftBtn { left: 24px; }
+  #rightBtn { right: 24px; }
+  #gameOverMsg {
+    position: absolute;
+    top: 40%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: #1976d2; background: #fff;
+    border: 3px solid #1976d2; border-radius: 16px;
+    padding: 12px 18px;
+    z-index: 20;
+    display: none; box-shadow: 0 4px 24px #0003;
+    text-align: center; white-space: nowrap;
+  }
+  #restartBtn {
+    margin-top: 9px;
+    font-size: 11px;
+    padding: 6px 18px;
+    background: #1976d2; color: white;
+    border: none; border-radius: 8px;
+    cursor: pointer; box-shadow: 0 2px 8px #0003;
+    transition: background 0.2s; display: inline-block;
+  }
+  #restartBtn:hover {
+    background: #145a9c;
+  }
+  #endingImage {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%; max-width: 380px;
+    border-radius: 20px;
+    box-shadow: 0 4px 32px #0005;
+    z-index: 30;
+  }
+  #copyright {
+    position: absolute;
+    right: 8px;
+    bottom: 5px;
+    font-size: 8px;
+    color: #fff;
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+    user-select: none;
+    text-align: right;
+    line-height: 1.3;
+    white-space: pre-line;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    max-width: 90vw;
+  }
+  @media (max-width: 500px) {
+    #gameWrapper { width: 100vw; height: 100vh; min-width: 0; min-height: 0; }
+    #copyright { font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+<div id="gameWrapper">
+  <div id="bg-objects">
+    <svg class="cloud" style="top:40px; left:10px;" viewBox="0 0 100 60"><ellipse cx="40" cy="35" rx="35" ry="20" fill="#fff"/><ellipse cx="70" cy="30" rx="20" ry="15" fill="#fff"/><ellipse cx="60" cy="45" rx="25" ry="15" fill="#fff"/></svg>
+    <svg class="cloud c2" viewBox="0 0 140 80"><ellipse cx="60" cy="50" rx="50" ry="25" fill="#fff"/><ellipse cx="110" cy="30" rx="25" ry="18" fill="#fff"/><ellipse cx="100" cy="60" rx="30" ry="18" fill="#fff"/></svg>
+    <svg class="cloud c3" viewBox="0 0 80 48"><ellipse cx="35" cy="24" rx="30" ry="12" fill="#fff"/><ellipse cx="65" cy="20" rx="15" ry="9" fill="#fff"/></svg>
+    <svg class="cloud c4" viewBox="0 0 120 70"><ellipse cx="50" cy="40" rx="40" ry="20" fill="#fff"/><ellipse cx="100" cy="30" rx="20" ry="12" fill="#fff"/><ellipse cx="90" cy="55" rx="22" ry="12" fill="#fff"/></svg>
+  </div>
+  <div id="startScreen">
+    <button id="startBtn">게임 시작하기</button>
+  </div>
+  <div id="gameArea">
+    <div id="score">점수: 0</div>
+    <div id="timer">100</div>
+    <div id="basket"></div>
+    <div id="leftBtn" class="moveBtn">&#8592;</div>
+    <div id="rightBtn" class="moveBtn">&#8594;</div>
+    <div id="gameOverMsg">
+      <span id="gameOverText"></span><br>
+      <button id="restartBtn">다시하기</button>
+    </div>
+    <img id="endingImage" src="" alt="엔딩 이미지">
+    <audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+    <div id="copyright">
+Sakura Girl의 Lights
+https://soundcloud.com/sakuragirl_official
+음악 제공: https://www.chosic.com/free-music/all/
+CC BY 3.0 https://creativecommons.org/licenses/by/3.0/
+    </div>
+  </div>
+</div>
+<script>
+  const gameArea = document.getElementById('gameArea');
+  const basket = document.getElementById('basket');
+  const scoreDisplay = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  const wrapper = document.getElementById('gameWrapper');
+  const startScreen = document.getElementById('startScreen');
+  const startBtn = document.getElementById('startBtn');
+  const gameOverMsg = document.getElementById('gameOverMsg');
+  const gameOverText = document.getElementById('gameOverText');
+  const restartBtn = document.getElementById('restartBtn');
+  const endingImage = document.getElementById('endingImage');
+  const bgm = document.getElementById('bgm');
+  let score = 0;
+  let basketX = wrapper.offsetWidth / 2;
+  const basketWidth = 80;
+  const basketHeight = 180;
+  const itemSize = 30;
+  let moveStep = 72;
+  let fallingItems = [];
+  let running = false;
+  let startTime = 0;
+  const maxScore = 30;
+  const maxTimeSeconds = 100;
+
+  const endingImages = [
+    'ending1.png',
+    'ending2.png',
+    'ending3.png',
+    'ending4.png'
+  ];
+
+  function setCharacterDirection(direction) {
+    if (direction === 'right') {
+      basket.style.transform = 'translateX(-50%) scaleX(1)';
+    } else if (direction === 'left') {
+      basket.style.transform = 'translateX(-50%) scaleX(-1)';
+    }
+  }
+
+  function resetGame() {
+    score = 0;
+    basketX = wrapper.offsetWidth / 2;
+    updateBasket();
+    setCharacterDirection('right');
+    scoreDisplay.textContent = '점수: 0';
+    timerDisplay.textContent = maxTimeSeconds;
+    fallingItems.forEach(item => { if (item.parentNode) item.parentNode.removeChild(item); });
+    fallingItems = [];
+    startTime = Date.now();
+    gameOverMsg.style.display = 'none';
+    endingImage.style.display = 'none';
+    bgm.currentTime = 0;
+    bgm.play();
+  }
+
+  function updateBasket() {
+    if (basketX < basketWidth / 2) basketX = basketWidth / 2;
+    if (basketX > wrapper.offsetWidth - basketWidth / 2) basketX = wrapper.offsetWidth - basketWidth / 2;
+    basket.style.left = basketX + 'px';
+  }
+
+  rightBtn.addEventListener('mousedown', () => {
+    basketX += moveStep;
+    updateBasket();
+    setCharacterDirection('right');
+  });
+  leftBtn.addEventListener('mousedown', () => {
+    basketX -= moveStep;
+    updateBasket();
+    setCharacterDirection('left');
+  });
+  rightBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    basketX += moveStep;
+    updateBasket();
+    setCharacterDirection('right');
+  });
+  leftBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    basketX -= moveStep;
+    updateBasket();
+    setCharacterDirection('left');
+  });
+  window.addEventListener('keydown', (e) => {
+    if (!running) return;
+    if (e.key === 'ArrowLeft') {
+      basketX -= moveStep;
+      updateBasket();
+      setCharacterDirection('left');
+    }
+    if (e.key === 'ArrowRight') {
+      basketX += moveStep;
+      updateBasket();
+      setCharacterDirection('right');
+    }
+  });
+
+  function createFallingItem() {
+    const item = document.createElement('div');
+    item.classList.add('fallingItem');
+    item.style.left = Math.random() * (wrapper.offsetWidth - itemSize) + 'px';
+    item.style.top = '0px';
+    gameArea.appendChild(item);
+    return item;
+  }
+
+  function getRect(el) {
+    const rect = el.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.left + rect.width,
+      top: rect.top,
+      bottom: rect.top + rect.height
+    };
+  }
+
+  function rectsOverlap(a, b) {
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  function updateFallingItems(items) {
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
+      let top = parseFloat(item.style.top);
+      top += 5;
+      item.style.top = top + 'px';
+
+      const basketRect = getRect(basket);
+      const itemRect = getRect(item);
+
+      if (rectsOverlap(basketRect, itemRect)) {
+        score++;
+        scoreDisplay.textContent = '점수: ' + score;
+        gameArea.removeChild(item);
+        items.splice(i, 1);
+        if (score >= maxScore) {
+          endGame(true);
+        }
+      } else if (top > wrapper.offsetHeight) {
+        gameArea.removeChild(item);
+        items.splice(i, 1);
+      }
+    }
+  }
+
+  function endGame(byScoreOrTime=false) {
+    running = false;
+    bgm.pause();
+    if (byScoreOrTime) {
+      const idx = Math.floor(Math.random() * endingImages.length);
+      endingImage.src = endingImages[idx];
+      endingImage.style.display = 'block';
+      gameOverMsg.style.display = 'none';
+    } else {
+      gameOverText.textContent = "게임 오버! 다시 시작하려면 다시하기를 눌러주세요";
+      gameOverMsg.style.display = 'block';
+      endingImage.style.display = 'none';
+    }
+  }
+
+  function gameLoop() {
+    if (!running) return;
+    if (Math.random() < 0.035) {
+      fallingItems.push(createFallingItem());
+    }
+    let now = Date.now();
+    let elapsed = (now - startTime) / 1000;
+    let remainTime = Math.max(0, maxTimeSeconds - Math.floor(elapsed));
+    timerDisplay.textContent = remainTime;
+    if (score >= maxScore || remainTime <= 0) {
+      endGame(true);
+      return;
+    }
+    updateFallingItems(fallingItems);
+    requestAnimationFrame(gameLoop);
+  }
+
+  startBtn.addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    gameArea.style.display = 'block';
+    resetGame();
+    running = true;
+    gameLoop();
+  });
+
+  restartBtn.addEventListener('click', () => {
+    gameOverMsg.style.display = 'none';
+    resetGame();
+    running = true;
+    gameLoop();
+  });
+
+  gameArea.style.display = 'none';
+</script>
+</body>
+</html>
